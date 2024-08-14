@@ -38,19 +38,19 @@ const TransactionsProvider = () => {
 
   const getAllTransactions = async () => {
     try {
-        const transactionsContract = createEthereumContract();
-        const availableTransactions = await transactionsContract.methods.getAllTransactions().call({ from: currentAccount });
+      if (!ethereum) return alert("Please install MetaMask.");
 
-        const structuredTransactions = availableTransactions!.map((transaction: any) => ({
-          addressTo: transaction.to,
-          addressFrom: transaction.from,
-          timestamp: new Date(transaction.timestamp.toNumber() * 1000).toLocaleString(),
-          amount: parseInt(transaction.amount) / (10 ** 18)
-        }));
+      const transactionsContract = createEthereumContract();
+      const availableTransactions = await transactionsContract.methods.getAllTransactions().call({ from: currentAccount });
 
-        console.log("Get All Transactions: ", structuredTransactions);
+      const structuredTransactions = availableTransactions!.map((transaction: any) => ({
+        addressTo: transaction.to,
+        addressFrom: transaction.from,
+        timestamp: new Date(parseInt(transaction.timestamp) * 1000).toLocaleString(),
+        amount: parseInt(transaction.amount) / (10 ** 18)
+      }));
 
-        setTransactions(structuredTransactions as structuredTransactionProps[]);
+      setTransactions(structuredTransactions as structuredTransactionProps[]);
     } catch (error) {
       console.log((error as Error).message);
     }
@@ -64,6 +64,10 @@ const TransactionsProvider = () => {
 
       if (accounts.length) {
         setCurrentAccount(accounts[0]);
+
+      ethereum.on("accountsChanged", (changedAccounts: string[]) => {
+        setCurrentAccount(changedAccounts[0]);
+      });
 
         getAllTransactions();
       } else {
@@ -95,9 +99,13 @@ const TransactionsProvider = () => {
       if (!ethereum) return alert("Please install MetaMask.");
 
       const accounts = await ethereum.request({ method: "eth_requestAccounts", });
-
       setCurrentAccount(accounts[0]);
-      window.location.reload();
+
+      // Switch to Sepolia Network
+      await ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0xaa36a7" }],
+      });
     } catch (error) {
       console.log((error as Error).message);
 
@@ -107,54 +115,54 @@ const TransactionsProvider = () => {
 
   const sendTransaction = async () => {
     try {
-        const { addressTo, amount } = formData;
+      if (!ethereum) return alert("Please install MetaMask.");
 
-        if (!isValidAddress(addressTo) || !isValidAddress(currentAccount)) {
-          console.error("Invalid address provided.");
-          return;
-        }
+      const { addressTo, amount } = formData;
 
-        const transactionsContract = createEthereumContract();
-        const parsedAmount = Web3.utils.toWei(amount.toString(), "ether");
+      if (!isValidAddress(addressTo) || !isValidAddress(currentAccount)) {
+        console.error("Invalid address provided.");
+        return;
+      }
 
-        const web3 = new Web3(ethereum);
-        const gasEstimate = await web3.eth.estimateGas({
+      setIsLoading(true);
+
+      const transactionsContract = createEthereumContract();
+      const parsedAmount = Web3.utils.toWei(amount.toString(), "ether");
+
+      const web3 = new Web3(ethereum);
+      const gasEstimate = await web3.eth.estimateGas({
+        from: currentAccount,
+        to: addressTo,
+        value: parsedAmount,
+      });
+
+      await ethereum.request({
+        method: "eth_sendTransaction",
+        params: [{
           from: currentAccount,
           to: addressTo,
+          gas: Web3.utils.toHex(gasEstimate),
           value: parsedAmount,
-        });
+        }],
+      });
 
-        await ethereum.request({
-          method: "eth_sendTransaction",
-          params: [{
-            from: currentAccount,
-            to: addressTo,
-            gas: Web3.utils.toHex(gasEstimate),
-            value: parsedAmount,
-          }],
-        });
+      const transactionHash = await transactionsContract.methods.addToBlockchain(currentAccount, addressTo, parsedAmount).send({ from: currentAccount });
+      const transactionsCount: any = await transactionsContract.methods.getTransactionCount().call({ from: currentAccount });
 
-        const transactionHash = await transactionsContract.methods.addToBlockchain(currentAccount, addressTo, parsedAmount).send({ from: currentAccount });
+      setTransactionCount(transactionsCount);
 
-        setIsLoading(true);
-        console.log(`Success - ${transactionHash.transactionHash}`);
-        setIsLoading(false);
-
-        const transactionsCount: any = await transactionsContract.methods.getTransactionCount().call({ from: currentAccount });
-        console.log("Transactions Count after sending transaction: ", transactionsCount)
-
-        // Update localStorage with new transaction count
-        localStorage.setItem("transactionCount", transactionsCount.toString());
-        setTransactionCount(transactionsCount);
+      console.log(`Success - ${transactionHash.transactionHash}`);
+      setIsLoading(false);
     } catch (error) {
       console.log((error as Error).message);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     checkIfWalletIsConnect();
     checkIfTransactionsExists();
-  }, [transactionCount > 1]);
+  }, [transactionCount, currentAccount]);
 
   return {
     currentAccount,

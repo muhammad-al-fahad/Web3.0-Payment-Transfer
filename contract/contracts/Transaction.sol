@@ -15,7 +15,7 @@ contract Transaction {
 
     TransferStruct[] transfers;
 
-    function addToBlockchain(address from, address to, uint256 amount, uint256) public {
+    function addToBlockchain(address from, address to, uint256 amount) public {
         TransferStruct memory transfer = TransferStruct({ from: from, to: to, amount: amount, timestamp: block.timestamp });
         transfers.push(transfer);
         transactionCount += 1;
