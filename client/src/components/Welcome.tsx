@@ -15,6 +15,8 @@ export interface InputProps {
   type: string;
   value: string;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>, name: string) => void;
+  setInputValue: React.Dispatch<React.SetStateAction<any>>;
+  inputValue: any
 }
 
 const Input = ({
@@ -23,18 +25,24 @@ const Input = ({
   type,
   value,
   handleChange,
+  setInputValue,
+  inputValue
 }: InputProps) => (
   <input
     placeholder={placeholder}
     type={type}
     step="0.00001"
     value={value}
-    onChange={(e) => handleChange(e, name)}
+    onChange={(e) => { 
+      setInputValue({ ...inputValue, [name]: e.target.value })
+      handleChange(e, name);
+    }}
     className="my-2 w-full rounded-sm p-2 outline-none bg-transparent text-white border-none text-sm white-glassmorphism"
   />
 );
 
 const Welcome = () => {
+  const [inputValue, setInputValue] = React.useState({ addressTo: "", amount: "" })
   const {
     currentAccount,
     connectWallet,
@@ -49,7 +57,7 @@ const Welcome = () => {
 
     e.preventDefault();
 
-    if (!addressTo || !amount) return;
+    if ((!addressTo || !amount) && (currentAccount !== addressTo)) return;
 
     sendTransaction();
   };
@@ -120,8 +128,10 @@ const Welcome = () => {
               placeholder="Address To"
               name="addressTo"
               type="text"
-              handleChange={handleChange}
-              value={formData.addressTo}
+              handleChange={inputValue.addressTo.length <= 42 ? handleChange : () => {}}
+              value={inputValue.addressTo.length < 42 ? inputValue.addressTo : shortenAddress(formData.addressTo)}
+              setInputValue={setInputValue}
+              inputValue={inputValue}
             />
             <Input
               placeholder="Amount (ETH)"
@@ -129,6 +139,8 @@ const Welcome = () => {
               type="number"
               handleChange={handleChange}
               value={formData.amount}
+              setInputValue={setInputValue}
+              inputValue={inputValue}
             />
 
             <div className="h-[1px] w-full bg-gray-400 my-2" />

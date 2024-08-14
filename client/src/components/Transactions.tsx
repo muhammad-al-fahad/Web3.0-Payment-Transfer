@@ -14,11 +14,11 @@ const TransactionsCard = ({ addressTo, addressFrom, timestamp, amount }: structu
     >
       <div className="flex flex-col items-center w-full mt-3">
         <div className="display-flex justify-start w-full mb-6 p-2">
-          <a href={`https://sepolia.etherscan.io/address/${addressFrom}`} target="_blank" rel="noreferrer">
-            <p className="text-white text-base">From: {shortenAddress(addressFrom)}</p>
+          <a title="sepolia.etherscan.io" href={`https://sepolia.etherscan.io/address/${addressFrom}`} target="_blank" rel="noreferrer">
+            <p className="text-white text-base">From: <span className="text-blue-700 underline underline-offset-2">{shortenAddress(addressFrom)}</span></p>
           </a>
-          <a href={`https://sepolia.etherscan.io/address/${addressTo}`} target="_blank" rel="noreferrer">
-            <p className="text-white text-base">To: {shortenAddress(addressTo)}</p>
+          <a title="sepolia.etherscan.io" href={`https://sepolia.etherscan.io/address/${addressTo}`} target="_blank" rel="noreferrer">
+            <p className="text-white text-base">To: <span className="text-blue-700 underline underline-offset-2">{shortenAddress(addressTo)}</span></p>
           </a>
           <p className="text-white text-base">Amount: {amount} ETH</p>
         </div>
