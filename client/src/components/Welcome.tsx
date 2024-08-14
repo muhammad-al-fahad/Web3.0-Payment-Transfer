@@ -57,7 +57,7 @@ const Welcome = () => {
 
     e.preventDefault();
 
-    if ((!addressTo || !amount) && (currentAccount !== addressTo)) return;
+    if (!addressTo || !amount) return;
 
     sendTransaction();
   };

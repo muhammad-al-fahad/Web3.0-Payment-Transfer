@@ -16,6 +16,7 @@ contract Transaction {
     TransferStruct[] transfers;
 
     function addToBlockchain(address from, address to, uint256 amount) public {
+        require(from == msg.sender && to != msg.sender, "You can't transfer ETH to yourself");
         TransferStruct memory transfer = TransferStruct({ from: from, to: to, amount: amount, timestamp: block.timestamp });
         transfers.push(transfer);
         transactionCount += 1;
